@@ -4,47 +4,47 @@
 // ID: [Your ID]
 
 #include "Graph.hpp"
+#include <iostream>
+#include <stdexcept>
+
+using namespace std;
 
 namespace ariel {
 
     Graph::Graph() : numVertices(0) {}
 
     void Graph::loadGraph(const vector<vector<int>>& matrix) {
-        int size = matrix.size();
+        int n = matrix.size();
         for (const auto& row : matrix) {
-            if (row.size() != size) {
+            if (row.size() != n) {
                 throw invalid_argument("Invalid graph: The graph is not a square matrix.");
             }
         }
         adjMatrix = matrix;
-        numVertices = size;
+        numVertices = n;
     }
 
     void Graph::printGraph() const {
-        std::cout << "Graph with " << numVertices << " vertices and " << countEdges() << " edges." << std::endl;
-    }
-
-    int Graph::countEdges() const {
+        cout << "Graph with " << numVertices << " vertices and ";
         int edges = 0;
-        for (int i = 0; i < numVertices; ++i) {
-            for (int j = 0; j < numVertices; ++j) {
-                if (adjMatrix[i][j] != 0) {
-                    edges++;
-                }
+        for (const auto& row : adjMatrix) {
+            for (int val : row) {
+                if (val != 0) ++edges;
             }
         }
-        return edges;
+        cout << edges << " edges." << endl;
     }
 
     Graph Graph::operator+(const Graph& other) const {
         if (numVertices != other.numVertices) {
-            throw invalid_argument("Graphs must be of the same size to add.");
+            throw invalid_argument("Graphs must be of the same size for addition.");
         }
         Graph result;
-        result.loadGraph(adjMatrix);
+        result.numVertices = numVertices;
+        result.adjMatrix.resize(numVertices, vector<int>(numVertices));
         for (int i = 0; i < numVertices; ++i) {
             for (int j = 0; j < numVertices; ++j) {
-                result.adjMatrix[i][j] += other.adjMatrix[i][j];
+                result.adjMatrix[i][j] = adjMatrix[i][j] + other.adjMatrix[i][j];
             }
         }
         return result;
@@ -57,13 +57,14 @@ namespace ariel {
 
     Graph Graph::operator-(const Graph& other) const {
         if (numVertices != other.numVertices) {
-            throw invalid_argument("Graphs must be of the same size to subtract.");
+            throw invalid_argument("Graphs must be of the same size for subtraction.");
         }
         Graph result;
-        result.loadGraph(adjMatrix);
+        result.numVertices = numVertices;
+        result.adjMatrix.resize(numVertices, vector<int>(numVertices));
         for (int i = 0; i < numVertices; ++i) {
             for (int j = 0; j < numVertices; ++j) {
-                result.adjMatrix[i][j] -= other.adjMatrix[i][j];
+                result.adjMatrix[i][j] = adjMatrix[i][j] - other.adjMatrix[i][j];
             }
         }
         return result;
@@ -80,10 +81,106 @@ namespace ariel {
 
     Graph Graph::operator-() const {
         Graph result;
-        result.loadGraph(adjMatrix);
+        result.numVertices = numVertices;
+        result.adjMatrix.resize(numVertices, vector<int>(numVertices));
         for (int i = 0; i < numVertices; ++i) {
             for (int j = 0; j < numVertices; ++j) {
                 result.adjMatrix[i][j] = -adjMatrix[i][j];
+            }
+        }
+        return result;
+    }
+
+    Graph& Graph::operator++() {
+        for (auto& row : adjMatrix) {
+            for (auto& val : row) {
+                ++val;
+            }
+        }
+        return *this;
+    }
+
+    Graph Graph::operator++(int) {
+        Graph temp = *this;
+        ++(*this);
+        return temp;
+    }
+
+    Graph& Graph::operator--() {
+        for (auto& row : adjMatrix) {
+            for (auto& val : row) {
+                --val;
+            }
+        }
+        return *this;
+    }
+
+    Graph Graph::operator--(int) {
+        Graph temp = *this;
+        --(*this);
+        return temp;
+    }
+
+    Graph Graph::operator*(int scalar) const {
+        Graph result;
+        result.numVertices = numVertices;
+        result.adjMatrix.resize(numVertices, vector<int>(numVertices));
+        for (int i = 0; i < numVertices; ++i) {
+            for (int j = 0; j < numVertices; ++j) {
+                result.adjMatrix[i][j] = adjMatrix[i][j] * scalar;
+            }
+        }
+        return result;
+    }
+
+    Graph& Graph::operator*=(int scalar) {
+        for (auto& row : adjMatrix) {
+            for (auto& val : row) {
+                val *= scalar;
+            }
+        }
+        return *this;
+    }
+
+    Graph Graph::operator/(int scalar) const {
+        if (scalar == 0) {
+            throw invalid_argument("Division by zero is not allowed.");
+        }
+        Graph result;
+        result.numVertices = numVertices;
+        result.adjMatrix.resize(numVertices, vector<int>(numVertices));
+        for (int i = 0; i < numVertices; ++i) {
+            for (int j = 0; j < numVertices; ++j) {
+                result.adjMatrix[i][j] = adjMatrix[i][j] / scalar;
+            }
+        }
+        return result;
+    }
+
+    Graph& Graph::operator/=(int scalar) {
+        if (scalar == 0) {
+            throw invalid_argument("Division by zero is not allowed.");
+        }
+        for (auto& row : adjMatrix) {
+            for (auto& val : row) {
+                val /= scalar;
+            }
+        }
+        return *this;
+    }
+
+    Graph Graph::operator*(const Graph& other) const {
+        if (numVertices != other.numVertices) {
+            throw invalid_argument("Graphs must be of the same size for multiplication.");
+        }
+        Graph result;
+        result.numVertices = numVertices;
+        result.adjMatrix.resize(numVertices, vector<int>(numVertices, 0));
+        for (int i = 0; i < numVertices; ++i) {
+            for (int j = 0; j < numVertices; ++j) {
+                for (int k = 0; k < numVertices; ++k) {
+                    result.adjMatrix[i][j] += adjMatrix[i][k] * other.adjMatrix[k][j];
+                }
             }
         }
         return result;
@@ -98,10 +195,8 @@ namespace ariel {
     }
 
     bool Graph::operator<(const Graph& other) const {
-        if (numVertices != other.numVertices) {
-            return numVertices < other.numVertices;
-        }
-        return countEdges() < other.countEdges();
+        return numVertices < other.numVertices ||
+               (numVertices == other.numVertices && adjMatrix < other.adjMatrix);
     }
 
     bool Graph::operator<=(const Graph& other) const {
@@ -116,76 +211,12 @@ namespace ariel {
         return !(*this < other);
     }
 
-    Graph& Graph::operator++() {
-        for (auto& row : adjMatrix) {
-            for (auto& elem : row) {
-                elem++;
-            }
-        }
-        return *this;
-    }
-
-    Graph Graph::operator++(int) {
-        Graph temp = *this;
-        ++(*this);
-        return temp;
-    }
-
-    Graph& Graph::operator--() {
-        for (auto& row : adjMatrix) {
-            for (auto& elem : row) {
-                elem--;
-            }
-        }
-        return *this;
-    }
-
-    Graph Graph::operator--(int) {
-        Graph temp = *this;
-        --(*this);
-        return temp;
-    }
-
-    Graph Graph::operator*(int scalar) const {
-        Graph result;
-        result.loadGraph(adjMatrix);
-        for (int i = 0; i < numVertices; ++i) {
-            for (int j = 0; j < numVertices; ++j) {
-                result.adjMatrix[i][j] *= scalar;
-            }
-        }
-        return result;
-    }
-
-    Graph& Graph::operator*=(int scalar) {
-        *this = *this * scalar;
-        return *this;
-    }
-
-    Graph Graph::operator*(const Graph& other) const {
-        if (numVertices != other.numVertices) {
-            throw invalid_argument("Graphs must be of the same size to multiply.");
-        }
-        Graph result;
-        result.adjMatrix.resize(numVertices, vector<int>(numVertices, 0));
-        result.numVertices = numVertices;
-        for (int i = 0; i < numVertices; ++i) {
-            for (int j = 0; j < numVertices; ++j) {
-                for (int k = 0; k < numVertices; ++k) {
-                    result.adjMatrix[i][j] += adjMatrix[i][k] * other.adjMatrix[k][j];
-                }
-            }
-        }
-        return result;
-    }
-
-    ostream& operator<<(ostream& os, const Graph& g) {
+    std::ostream& operator<<(std::ostream& os, const Graph& g) {
         for (const auto& row : g.adjMatrix) {
-            os << "[ ";
-            for (const auto& elem : row) {
-                os << elem << " ";
+            for (const auto& val : row) {
+                os << val << " ";
             }
-            os << "]\n";
+            os << std::endl;
         }
         return os;
     }

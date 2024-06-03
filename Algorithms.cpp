@@ -5,162 +5,166 @@
 
 #include "Algorithms.hpp"
 #include <queue>
-#include <unordered_set>
-#include <vector>
-#include <string>
-#include <sstream>
+#include <stack>
+#include <limits>
+#include <functional>
+#include <iostream>
+
+using namespace std;
 
 namespace ariel {
 
     bool Algorithms::isConnected(const Graph& g) {
-        if (g.numVertices == 0) return true;
-        
-        std::vector<bool> visited(g.numVertices, false);
-        std::queue<int> q;
+        if (g.numVertices == 0) return false;
+
+        vector<bool> visited(g.numVertices, false);
+        queue<int> q;
         q.push(0);
         visited[0] = true;
-        
+
         int visitedCount = 1;
-        
+
         while (!q.empty()) {
-            int node = q.front();
+            int v = q.front();
             q.pop();
-            
+
             for (int i = 0; i < g.numVertices; ++i) {
-                if (g.adjMatrix[node][i] != 0 && !visited[i]) {
+                if (g.adjMatrix[v][i] != 0 && !visited[i]) {
                     visited[i] = true;
                     q.push(i);
-                    visitedCount++;
+                    ++visitedCount;
                 }
             }
         }
-        
+
         return visitedCount == g.numVertices;
     }
 
-    std::string Algorithms::shortestPath(const Graph& g, int start, int end) {
-        if (start < 0 || start >= g.numVertices || end < 0 || end >= g.numVertices) {
-            throw std::invalid_argument("Invalid start or end vertex.");
-        }
-        
-        std::vector<int> dist(g.numVertices, INT_MAX);
-        std::vector<int> prev(g.numVertices, -1);
-        std::vector<bool> visited(g.numVertices, false);
-        
+    vector<int> Algorithms::shortestPath(const Graph& g, int start, int end) {
+        vector<int> dist(g.numVertices, numeric_limits<int>::max());
+        vector<int> prev(g.numVertices, -1);
+        vector<bool> visited(g.numVertices, false);
+
         dist[start] = 0;
-        
-        auto comp = [&dist](int left, int right) { return dist[left] > dist[right]; };
-        std::priority_queue<int, std::vector<int>, decltype(comp)> pq(comp);
-        
-        pq.push(start);
-        
-        while (!pq.empty()) {
-            int u = pq.top();
-            pq.pop();
-            
-            if (visited[u]) continue;
+        for (int i = 0; i < g.numVertices - 1; ++i) {
+            int minDist = numeric_limits<int>::max();
+            int u = -1;
+
+            for (int j = 0; j < g.numVertices; ++j) {
+                if (!visited[j] && dist[j] < minDist) {
+                    minDist = dist[j];
+                    u = j;
+                }
+            }
+
+            if (u == -1) break;
+
             visited[u] = true;
-            
+
             for (int v = 0; v < g.numVertices; ++v) {
-                if (g.adjMatrix[u][v] != 0) {
-                    int alt = dist[u] + g.adjMatrix[u][v];
-                    if (alt < dist[v]) {
-                        dist[v] = alt;
-                        prev[v] = u;
-                        pq.push(v);
-                    }
+                if (!visited[v] && g.adjMatrix[u][v] != 0 && dist[u] + g.adjMatrix[u][v] < dist[v]) {
+                    dist[v] = dist[u] + g.adjMatrix[u][v];
+                    prev[v] = u;
                 }
             }
         }
-        
-        if (dist[end] == INT_MAX) return "-1";
-        
-        std::ostringstream path;
-        for (int at = end; at != -1; at = prev[at]) {
-            path << at;
-            if (at != start) path << "->";
+
+        if (dist[end] == numeric_limits<int>::max()) {
+            return {-1};
         }
-        
-        std::string result = path.str();
-        std::reverse(result.begin(), result.end());
-        return result;
+
+        vector<int> path;
+        for (int v = end; v != -1; v = prev[v]) {
+            path.push_back(v);
+        }
+        reverse(path.begin(), path.end());
+        return path;
     }
 
     bool Algorithms::isContainsCycle(const Graph& g) {
-        std::vector<bool> visited(g.numVertices, false);
-        std::vector<int> parent(g.numVertices, -1);
-        
-        for (int i = 0; i < g.numVertices; ++i) {
-            if (!visited[i]) {
-                std::stack<int> s;
-                s.push(i);
-                
-                while (!s.empty()) {
-                    int v = s.top();
-                    s.pop();
-                    
-                    if (!visited[v]) {
-                        visited[v] = true;
+        vector<bool> visited(g.numVertices, false);
+        vector<bool> recStack(g.numVertices, false);
+
+        function<bool(int)> dfs = [&](int v) {
+            visited[v] = true;
+            recStack[v] = true;
+
+            for (int i = 0; i < g.numVertices; ++i) {
+                if (g.adjMatrix[v][i] != 0) {
+                    if (!visited[i] && dfs(i)) {
+                        return true;
+                    } else if (recStack[i]) {
+                        return true;
                     }
-                    
+                }
+            }
+
+            recStack[v] = false;
+            return false;
+        };
+
+        for (int i = 0; i < g.numVertices; ++i) {
+            if (!visited[i] && dfs(i)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool Algorithms::isBipartite(const Graph& g) {
+        vector<int> colors(g.numVertices, -1);
+        queue<int> q;
+
+        for (int i = 0; i < g.numVertices; ++i) {
+            if (colors[i] == -1) {
+                colors[i] = 0;
+                q.push(i);
+
+                while (!q.empty()) {
+                    int v = q.front();
+                    q.pop();
+
                     for (int j = 0; j < g.numVertices; ++j) {
                         if (g.adjMatrix[v][j] != 0) {
-                            if (!visited[j]) {
-                                s.push(j);
-                                parent[j] = v;
-                            } else if (parent[v] != j) {
-                                return true;
+                            if (colors[j] == -1) {
+                                colors[j] = 1 - colors[v];
+                                q.push(j);
+                            } else if (colors[j] == colors[v]) {
+                                return false;
                             }
                         }
                     }
                 }
             }
         }
-        
-        return false;
+
+        return true;
     }
 
-    std::string Algorithms::isBipartite(const Graph& g) {
-        if (g.numVertices == 0) return "The graph is bipartite: A={}, B={}";
-        
-        std::vector<int> colors(g.numVertices, -1);
-        colors[0] = 0;
-        
-        std::queue<int> q;
-        q.push(0);
-        
-        while (!q.empty()) {
-            int u = q.front();
-            q.pop();
-            
-            for (int v = 0; v < g.numVertices; ++v) {
-                if (g.adjMatrix[u][v] != 0 && colors[v] == -1) {
-                    colors[v] = 1 - colors[u];
-                    q.push(v);
-                } else if (g.adjMatrix[u][v] != 0 && colors[v] == colors[u]) {
-                    return "0"; // False
+    bool Algorithms::negativeCycle(const Graph& g) {
+        vector<int> dist(g.numVertices, numeric_limits<int>::max());
+        dist[0] = 0;
+
+        for (int k = 0; k < g.numVertices - 1; ++k) {
+            for (int i = 0; i < g.numVertices; ++i) {
+                for (int j = 0; j < g.numVertices; ++j) {
+                    if (g.adjMatrix[i][j] != 0 && dist[i] != numeric_limits<int>::max() && dist[i] + g.adjMatrix[i][j] < dist[j]) {
+                        dist[j] = dist[i] + g.adjMatrix[i][j];
+                    }
                 }
             }
         }
-        
-        std::ostringstream setA, setB;
-        setA << "A={";
-        setB << "B={";
-        
+
         for (int i = 0; i < g.numVertices; ++i) {
-            if (colors[i] == 0) setA << i << ",";
-            else if (colors[i] == 1) setB << i << ",";
+            for (int j = 0; j < g.numVertices; ++j) {
+                if (g.adjMatrix[i][j] != 0 && dist[i] != numeric_limits<int>::max() && dist[i] + g.adjMatrix[i][j] < dist[j]) {
+                    return true;
+                }
+            }
         }
-        
-        std::string a = setA.str();
-        std::string b = setB.str();
-        
-        if (a.back() == ',') a.pop_back();
-        if (b.back() == ',') b.pop_back();
-        
-        a += "}";
-        b += "}";
-        
-        return "The graph is bipartite: " + a + ", " + b;
+
+        return false;
     }
+
 }

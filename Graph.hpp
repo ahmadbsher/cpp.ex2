@@ -8,22 +8,16 @@
 
 #include <vector>
 #include <iostream>
-#include <stdexcept>
-
-using std::vector;
-using std::ostream;
-using std::invalid_argument;
 
 namespace ariel {
     class Graph {
-    private:
-        vector<vector<int>> adjMatrix;
-        int numVertices;
-        int countEdges() const;
-
     public:
+        std::vector<std::vector<int>> adjMatrix;
+        int numVertices;
+
         Graph();
-        void loadGraph(const vector<vector<int>>& matrix);
+
+        void loadGraph(const std::vector<std::vector<int>>& matrix);
         void printGraph() const;
 
         // Arithmetic operators
@@ -33,6 +27,15 @@ namespace ariel {
         Graph& operator-=(const Graph& other);
         Graph operator+() const; // Unary plus
         Graph operator-() const; // Unary minus
+        Graph& operator++();     // Prefix increment
+        Graph operator++(int);   // Postfix increment
+        Graph& operator--();     // Prefix decrement
+        Graph operator--(int);   // Postfix decrement
+        Graph operator*(int scalar) const;
+        Graph& operator*=(int scalar);
+        Graph operator/(int scalar) const;
+        Graph& operator/=(int scalar);
+        Graph operator*(const Graph& other) const;
 
         // Comparison operators
         bool operator==(const Graph& other) const;
@@ -42,21 +45,8 @@ namespace ariel {
         bool operator>(const Graph& other) const;
         bool operator>=(const Graph& other) const;
 
-        // Increment and decrement operators
-        Graph& operator++();    // Prefix increment
-        Graph operator++(int);  // Postfix increment
-        Graph& operator--();    // Prefix decrement
-        Graph operator--(int);  // Postfix decrement
-
-        // Scalar multiplication
-        Graph operator*(int scalar) const;
-        Graph& operator*=(int scalar);
-
-        // Graph multiplication
-        Graph operator*(const Graph& other) const;
-
         // Output operator
-        friend ostream& operator<<(ostream& os, const Graph& g);
+        friend std::ostream& operator<<(std::ostream& os, const Graph& g);
     };
 }
 
