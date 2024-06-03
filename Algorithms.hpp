@@ -1,7 +1,7 @@
 // Algorithms.hpp
-// Author: [Your Name]
-// Email: [Your Email]
-// ID: [Your ID]
+// Author: [ahmad bsher]
+// Email: [ahmadbsh30@gmail.com]
+// ID: [213552698]
 
 #ifndef ALGORITHMS_HPP
 #define ALGORITHMS_HPP

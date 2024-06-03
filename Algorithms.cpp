@@ -1,7 +1,7 @@
 // Algorithms.cpp
-// Author: [Your Name]
-// Email: [Your Email]
-// ID: [Your ID]
+// Author: [ahmad bsher]
+// Email: [ahmadbsh30@gmail.com]
+// ID: [213552698]
 
 #include "Algorithms.hpp"
 #include <queue>
